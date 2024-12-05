@@ -12,7 +12,10 @@ from main import process_screenshot
 from utils import load_config
 
 CONFIG_FILE = "config.json"
-DATA_FOLDER = "data/"
+# Get the directory of the current file (gui.py)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Construct an absolute path to the data folder
+DATA_FOLDER = os.path.join(BASE_DIR, "data")
 LAST_SESSION_FOLDER = os.path.join(DATA_FOLDER, "last_session")
 
 class GameStatsApp(QMainWindow):
@@ -101,7 +104,7 @@ class GameStatsApp(QMainWindow):
 
         open_aggregate_player_data_button = QPushButton("Open Aggregate Player Data")
         open_aggregate_player_data_button.clicked.connect(
-            lambda: self.open_file(os.path.join(DATA_FOLDER, "aggregate_player_data.csv"))
+            lambda: self.open_folder(DATA_FOLDER)
         )
         layout.addWidget(open_aggregate_player_data_button)
 

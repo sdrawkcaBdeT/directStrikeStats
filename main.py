@@ -99,6 +99,7 @@ def process_screenshot(player_name):
         # Determine the player's team
         team = "Team 1" if i < 3 else "Team 2"
 
+        # Extract the columns as before
         for column_name, column_coords in columns.items():
             cropped_cell = crop_area(
                 cropped_image_pil,
@@ -117,10 +118,31 @@ def process_screenshot(player_name):
             extracted_text = extract_text_from_image(cropped_cell, is_numeric=is_numeric)
             row_data.append(extracted_text)
 
+        # Temporarily store the game_outcome. We will adjust after identifying the user's team.
         row_data.append(team)
-        row_data.append(game_outcome)
+        row_data.append(game_outcome) 
         row_data.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         extracted_data.append(row_data)
+        
+    # Adjust victory/defeat assignments based on the user's team
+    if game_outcome in ["Victory", "Defeat"]:
+        user_team = None
+        # Find the user's team by locating their player name
+        for row in extracted_data:
+            if row[1] == player_name:
+                user_team = row[7]  # 'Team 1' or 'Team 2'
+                break
+
+        if user_team is not None:
+            user_result = game_outcome
+            opposing_result = "Defeat" if game_outcome == "Victory" else "Victory"
+
+            # Assign outcomes based on the user's team
+            for row in extracted_data:
+                if row[7] == user_team:
+                    row[8] = user_result
+                else:
+                    row[8] = opposing_result
 
     # Save current player data to file
     player_data_file = os.path.join(LAST_SESSION_FOLDER, "output.csv")
