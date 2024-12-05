@@ -1,74 +1,86 @@
 import os
 import json
-import pyautogui
-import cv2
-import numpy as np
 from PIL import Image
-import pytesseract
-from PyQt5.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QWidget, QFileDialog
-import sys
 
-# Load configuration file
-def load_config():
-    if os.path.exists("config.json"):
-        with open("config.json", "r") as f:
-            return json.load(f)
-    else:
-        print("Configuration file not found!")
-        return {}
+# Toggle to enable or disable saving cropped images for testing
+SAVE_CROPPED_IMAGES = True
 
-# Take a screenshot
-def take_screenshot():
-    screenshot = pyautogui.screenshot()
-    screenshot_path = os.path.join(os.getcwd(), "screenshot.png")
-    screenshot.save(screenshot_path)
-    return screenshot_path
+# Load configuration from JSON file
+def load_config(config_file="config.json"):
+    with open(config_file, "r") as f:
+        return json.load(f)
 
-# Perform OCR
-def perform_ocr(screenshot_path, config):
-    image = Image.open(screenshot_path)
-    team1_coords = config["team1_coords"]
-    x_start = int(team1_coords[0] * image.width)
-    y_start = int(team1_coords[1] * image.height)
-    x_end = x_start + int(team1_coords[2] * image.width)
-    y_end = y_start + int(team1_coords[3] * image.height)
+# Example to crop areas dynamically using percentages
+def crop_area(image, start_x, end_x, top_y, bottom_y):
+    width, height = image.size
+    return image.crop((
+        int(start_x / 100 * width),
+        int(top_y / 100 * height),
+        int(end_x / 100 * width),
+        int(bottom_y / 100 * height)
+    ))
 
-    cropped_image = image.crop((x_start, y_start, x_end, y_end))
-    cropped_image = preprocess_image(cropped_image)
+# Save cropped images for testing
+def save_cropped_image(image, output_folder, file_name):
+    if SAVE_CROPPED_IMAGES:
+        os.makedirs(output_folder, exist_ok=True)  # Ensure the folder exists
+        file_path = os.path.join(output_folder, file_name)
+        image.save(file_path)
+        print(f"Saved cropped image: {file_path}")
 
-    text = pytesseract.image_to_string(cropped_image, config="--psm 6")
-    print("Extracted text:", text)
-
-# Preprocess image for better OCR
-def preprocess_image(image):
-    resized_image = image.resize((500, int(500 * (image.height / image.width))), Image.ANTIALIAS)
-    return resized_image.convert("L")  # Convert to grayscale
-
-# GUI Application
-def start_gui():
-    app = QApplication(sys.argv)
-
-    window = QWidget()
-    window.setWindowTitle("Game Data Extractor")
-
-    layout = QVBoxLayout()
-
-    label = QLabel("Welcome to the Game Data Extractor!")
-    layout.addWidget(label)
-
-    start_button = QPushButton("Take Screenshot and Extract Data")
-    start_button.clicked.connect(lambda: perform_ocr(take_screenshot(), config))
-    layout.addWidget(start_button)
-
-    exit_button = QPushButton("Exit")
-    exit_button.clicked.connect(app.quit)
-    layout.addWidget(exit_button)
-
-    window.setLayout(layout)
-    window.show()
-    sys.exit(app.exec_())
-
-# Load configuration and start GUI
-if __name__ == "__main__":
+# Main function to demonstrate how to use rows, columns, and middle control
+def process_image(image_path):
+    # Load the config
     config = load_config()
-    start_gui()
+
+    # Open the image
+    image = Image.open(image_path)
+
+    # Output folder for testing
+    output_folder = "testing_output"
+
+    # Crop and process each player row
+    rows = config["rows"]
+    columns = config["columns"]
+    for i, row in enumerate(rows):
+        print(f"Processing Row {i + 1}")
+        for column_name, column_coords in columns.items():
+            cropped_cell = crop_area(
+                image,
+                column_coords["start_x"],
+                column_coords["end_x"],
+                row["top_y"],
+                row["bottom_y"]
+            )
+            # Save the cropped image for debugging
+            save_cropped_image(
+                cropped_cell,
+                output_folder,
+                f"Row_{i + 1}_{column_name.replace(' ', '_')}.png"
+            )
+            # Example placeholder for processing (e.g., OCR or further analysis)
+            print(f"Cropping {column_name} for Row {i + 1}")
+
+    # Crop middle control for Team 1 and Team 2
+    middle_control = config["middle_control"]
+    for team, coords in middle_control.items():
+        cropped_team_area = crop_area(
+            image,
+            coords["top_left_x"],
+            coords["bottom_right_x"],
+            coords["top_left_y"],
+            coords["bottom_right_y"]
+        )
+        # Save the cropped image for debugging
+        save_cropped_image(
+            cropped_team_area,
+            output_folder,
+            f"Middle_Control_{team.replace(' ', '_')}.png"
+        )
+        # Example placeholder for processing (e.g., OCR or further analysis)
+        print(f"Cropping Middle Control for {team}")
+
+# Example usage
+if __name__ == "__main__":
+    # Replace 'screenshot.png' with your image file path
+    process_image("screenshot.png")

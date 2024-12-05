@@ -1,14 +1,22 @@
 {
-    "team1_coords": [0.1, 0.2, 0.8, 0.3],
-    "row_count": 3,
-    "row_height": 0.3333,
+    "rows": [
+        {"top_y": 12.90, "bottom_y": 16.50},
+        {"top_y": 21.31, "bottom_y": 24.92},
+        {"top_y": 29.18, "bottom_y": 32.79},
+        {"top_y": 48.52, "bottom_y": 52.13},
+        {"top_y": 57.05, "bottom_y": 60.66},
+        {"top_y": 64.92, "bottom_y": 68.53}
+    ],
     "columns": {
-        "Player": [0.0, 0.2],
-        "Level": [0.2, 0.3],
-        "Score": [0.3, 0.4],
-        "Kills": [0.4, 0.5],
-        "Damage Done": [0.5, 0.7],
-        "Gold Spent": [0.7, 0.9],
-        "Vote": [0.9, 1.0]
+        "Player Name": {"start_x": 8.65, "end_x": 21.44},
+        "Level": {"start_x": 22.46, "end_x": 26.12},
+        "Score": {"start_x": 28.22, "end_x": 31.95},
+        "Kills": {"start_x": 35.31, "end_x": 39.04},
+        "Damage Done": {"start_x": 42.46, "end_x": 52.37},
+        "Gold Spent": {"start_x": 54.12, "end_x": 61.69}
+    },
+    "middle_control": {
+        "Team 1": {"top_left_x": 86.82, "top_left_y": 48.47, "bottom_right_x": 92.18, "bottom_right_y": 51.48},
+        "Team 2": {"top_left_x": 86.82, "top_left_y": 51.69, "bottom_right_x": 92.18, "bottom_right_y": 54.86}
     }
 }
