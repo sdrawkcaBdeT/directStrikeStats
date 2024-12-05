@@ -1,8 +1,9 @@
 import os
 import json
+import csv
 from PIL import Image
 import pyautogui
-import csv
+import keyboard
 
 # Toggle to enable or disable saving cropped images for testing
 SAVE_CROPPED_IMAGES = True
@@ -43,7 +44,7 @@ def save_to_csv(data, output_file="output.csv"):
         writer.writerows(data)
     print(f"Data saved to {output_file}")
 
-# Main function to process screenshot and export CSV
+# Main function to process a screenshot
 def process_screenshot():
     # Load the config
     config = load_config()
@@ -107,6 +108,17 @@ def process_screenshot():
     # Save all extracted data to a CSV
     save_to_csv(extracted_data)
 
-# Example usage
+# Main program loop to listen for hotkey
+def main():
+    print("Press Ctrl+S to capture the scoreboard and process stats.")
+    while True:
+        if keyboard.is_pressed("ctrl+s"):
+            print("Hotkey pressed: Capturing and processing scoreboard...")
+            process_screenshot()
+            print("Processing complete. Press Ctrl+S to capture again or close the program to exit.")
+            # Wait until the key is released to avoid multiple triggers
+            keyboard.wait("ctrl+s", suppress=True)
+
+# Run the main program
 if __name__ == "__main__":
-    process_screenshot()
+    main()
