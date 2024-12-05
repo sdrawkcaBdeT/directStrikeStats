@@ -2,11 +2,15 @@ import os
 import json
 import csv
 from PIL import Image
+import pytesseract
 import pyautogui
 import keyboard
 
 # Toggle to enable or disable saving cropped images for testing
 SAVE_CROPPED_IMAGES = True
+
+# Path to the Tesseract executable (local to the app)
+pytesseract.pytesseract.tesseract_cmd = os.path.join(os.getcwd(), "tesseract", "tesseract.exe")
 
 # Load configuration from JSON file
 def load_config(config_file="config.json"):
@@ -31,10 +35,18 @@ def save_cropped_image(image, output_folder, file_name):
         image.save(file_path)
         print(f"Saved cropped image: {file_path}")
 
-# Extract text from cropped image (placeholder for OCR or manual testing)
-def extract_text_from_image(cropped_image):
-    # Placeholder for OCR or other logic; returning "TEST" for now
-    return "TEST"
+# Extract text from cropped image using Tesseract OCR
+def extract_text_from_image(cropped_image, is_numeric=False):
+    # Convert the image to grayscale for better OCR results
+    gray_image = cropped_image.convert("L")
+
+    # Use OCR to extract text
+    config = "--psm 6"  # Treat the image as a single block of text
+    if is_numeric:
+        config += " outputbase digits"  # Optimize for numeric data
+
+    extracted_text = pytesseract.image_to_string(gray_image, config=config).strip()
+    return extracted_text
 
 # Save extracted stats to CSV
 def save_to_csv(data, output_file="output.csv"):
@@ -82,8 +94,9 @@ def process_screenshot():
                 output_folder,
                 f"Row_{i + 1}_{column_name.replace(' ', '_')}.png"
             )
-            # Extract text (placeholder logic)
-            extracted_text = extract_text_from_image(cropped_cell)
+            # Extract text using OCR
+            is_numeric = column_name in ["Level", "Score", "Kills", "Damage Done", "Gold Spent"]
+            extracted_text = extract_text_from_image(cropped_cell, is_numeric=is_numeric)
             row_data.append(extracted_text)
         extracted_data.append(row_data)
 
