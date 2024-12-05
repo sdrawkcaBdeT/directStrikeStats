@@ -1,6 +1,8 @@
 import os
 import json
 from PIL import Image
+import pyautogui
+import csv
 
 # Toggle to enable or disable saving cropped images for testing
 SAVE_CROPPED_IMAGES = True
@@ -28,22 +30,43 @@ def save_cropped_image(image, output_folder, file_name):
         image.save(file_path)
         print(f"Saved cropped image: {file_path}")
 
-# Main function to demonstrate how to use rows, columns, and middle control
-def process_image(image_path):
+# Extract text from cropped image (placeholder for OCR or manual testing)
+def extract_text_from_image(cropped_image):
+    # Placeholder for OCR or other logic; returning "TEST" for now
+    return "TEST"
+
+# Save extracted stats to CSV
+def save_to_csv(data, output_file="output.csv"):
+    with open(output_file, mode="w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Row", "Player Name", "Level", "Score", "Kills", "Damage Done", "Gold Spent"])  # Header
+        writer.writerows(data)
+    print(f"Data saved to {output_file}")
+
+# Main function to process screenshot and export CSV
+def process_screenshot():
     # Load the config
     config = load_config()
 
-    # Open the image
-    image = Image.open(image_path)
+    # Take a screenshot
+    screenshot_path = "screenshot.png"
+    pyautogui.screenshot(screenshot_path)
+    print(f"Screenshot saved: {screenshot_path}")
+
+    # Open the screenshot image
+    image = Image.open(screenshot_path)
 
     # Output folder for testing
     output_folder = "testing_output"
 
-    # Crop and process each player row
+    # Process each player row and extract stats
     rows = config["rows"]
     columns = config["columns"]
+    extracted_data = []  # Store extracted stats for CSV export
+
     for i, row in enumerate(rows):
         print(f"Processing Row {i + 1}")
+        row_data = [f"Row {i + 1}"]  # Add row identifier
         for column_name, column_coords in columns.items():
             cropped_cell = crop_area(
                 image,
@@ -58,10 +81,12 @@ def process_image(image_path):
                 output_folder,
                 f"Row_{i + 1}_{column_name.replace(' ', '_')}.png"
             )
-            # Example placeholder for processing (e.g., OCR or further analysis)
-            print(f"Cropping {column_name} for Row {i + 1}")
+            # Extract text (placeholder logic)
+            extracted_text = extract_text_from_image(cropped_cell)
+            row_data.append(extracted_text)
+        extracted_data.append(row_data)
 
-    # Crop middle control for Team 1 and Team 2
+    # Process middle control for Team 1 and Team 2 (Optional)
     middle_control = config["middle_control"]
     for team, coords in middle_control.items():
         cropped_team_area = crop_area(
@@ -77,10 +102,11 @@ def process_image(image_path):
             output_folder,
             f"Middle_Control_{team.replace(' ', '_')}.png"
         )
-        # Example placeholder for processing (e.g., OCR or further analysis)
-        print(f"Cropping Middle Control for {team}")
+        print(f"Processed Middle Control for {team}")
+
+    # Save all extracted data to a CSV
+    save_to_csv(extracted_data)
 
 # Example usage
 if __name__ == "__main__":
-    # Replace 'screenshot.png' with your image file path
-    process_image("screenshot.png")
+    process_screenshot()
