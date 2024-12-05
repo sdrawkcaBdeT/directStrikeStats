@@ -1,0 +1,14 @@
+{
+    "team1_coords": [0.1, 0.2, 0.8, 0.3],
+    "row_count": 3,
+    "row_height": 0.3333,
+    "columns": {
+        "Player": [0.0, 0.2],
+        "Level": [0.2, 0.3],
+        "Score": [0.3, 0.4],
+        "Kills": [0.4, 0.5],
+        "Damage Done": [0.5, 0.7],
+        "Gold Spent": [0.7, 0.9],
+        "Vote": [0.9, 1.0]
+    }
+}
