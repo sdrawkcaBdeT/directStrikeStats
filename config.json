@@ -1,22 +1,75 @@
 {
+    "player_name": "sdrawkcaB",
     "rows": [
-        {"top_y": 12.90, "bottom_y": 16.50},
-        {"top_y": 21.31, "bottom_y": 24.92},
-        {"top_y": 29.18, "bottom_y": 32.79},
-        {"top_y": 48.52, "bottom_y": 52.13},
-        {"top_y": 57.05, "bottom_y": 60.66},
-        {"top_y": 64.92, "bottom_y": 68.53}
+        {
+            "top_y": 12.9,
+            "bottom_y": 16.5
+        },
+        {
+            "top_y": 21.31,
+            "bottom_y": 24.92
+        },
+        {
+            "top_y": 29.18,
+            "bottom_y": 32.79
+        },
+        {
+            "top_y": 48.52,
+            "bottom_y": 52.13
+        },
+        {
+            "top_y": 57.05,
+            "bottom_y": 60.66
+        },
+        {
+            "top_y": 64.92,
+            "bottom_y": 68.53
+        }
     ],
     "columns": {
-        "Player Name": {"start_x": 8.65, "end_x": 21.44},
-        "Level": {"start_x": 22.46, "end_x": 26.12},
-        "Score": {"start_x": 28.22, "end_x": 31.95},
-        "Kills": {"start_x": 35.31, "end_x": 39.04},
-        "Damage Done": {"start_x": 42.46, "end_x": 52.37},
-        "Gold Spent": {"start_x": 54.12, "end_x": 61.69}
+        "Player Name": {
+            "start_x": 8.65,
+            "end_x": 21.44
+        },
+        "Level": {
+            "start_x": 22.46,
+            "end_x": 26.12
+        },
+        "Score": {
+            "start_x": 28.22,
+            "end_x": 31.95
+        },
+        "Kills": {
+            "start_x": 35.31,
+            "end_x": 39.04
+        },
+        "Damage Done": {
+            "start_x": 42.46,
+            "end_x": 52.37
+        },
+        "Gold Spent": {
+            "start_x": 54.12,
+            "end_x": 61.69
+        }
     },
     "middle_control": {
-        "Team 1": {"top_left_x": 86.82, "top_left_y": 48.47, "bottom_right_x": 92.18, "bottom_right_y": 51.48},
-        "Team 2": {"top_left_x": 86.82, "top_left_y": 51.69, "bottom_right_x": 92.18, "bottom_right_y": 54.86}
+        "Team 1": {
+            "top_left_x": 86.82,
+            "top_left_y": 48.47,
+            "bottom_right_x": 92.18,
+            "bottom_right_y": 51.48
+        },
+        "Team 2": {
+            "top_left_x": 86.82,
+            "top_left_y": 51.69,
+            "bottom_right_x": 92.18,
+            "bottom_right_y": 54.86
+        }
+    },
+    "victory_defeat_position": {
+        "start_x": 75.0,
+        "end_x": 616.0,
+        "start_y": 700.0,
+        "end_y": 875.0
     }
 }
