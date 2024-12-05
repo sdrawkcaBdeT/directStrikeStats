@@ -24,9 +24,6 @@ LAST_SESSION_FOLDER = os.path.join(DATA_FOLDER, "last_session")
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
 
-# Set the Tesseract executable path
-pytesseract.pytesseract.tesseract_cmd = os.path.join(os.getcwd(), "tesseract", "tesseract.exe")
-
 def process_screenshot(player_name):
     # Generate UUID for the session
     session_uuid = generate_uuid()

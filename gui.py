@@ -154,11 +154,21 @@ class GameStatsApp(QMainWindow):
         # Main layout for the analytics tab
         main_layout = QVBoxLayout()
 
-        # Top section: Match selection
-        match_selection_layout = QVBoxLayout()
-        match_selection_layout.addWidget(QLabel("Select Match UUID:"))
+        # Top section: Match selection + Refresh button
+        top_layout = QHBoxLayout()
+
+        match_label = QLabel("Select Match UUID:")
+        top_layout.addWidget(match_label)
+
         self.match_selector = QComboBox()
-        match_selection_layout.addWidget(self.match_selector)
+        top_layout.addWidget(self.match_selector)
+
+        # Add the Refresh button
+        refresh_button = QPushButton("Refresh")
+        refresh_button.clicked.connect(self.update_analytics_view)
+        top_layout.addWidget(refresh_button)
+
+        main_layout.addLayout(top_layout)
 
         if not self.aggregate_data.empty:
             matches = self.aggregate_data["uuid"].unique()
@@ -166,7 +176,6 @@ class GameStatsApp(QMainWindow):
                 self.match_selector.addItem(m)
 
         self.match_selector.currentIndexChanged.connect(self.update_analytics_view)
-        main_layout.addLayout(match_selection_layout)
 
         # Create a horizontal layout for the three main sections:
         h_layout = QHBoxLayout()
@@ -195,7 +204,7 @@ class GameStatsApp(QMainWindow):
         h_layout.addLayout(middle_section)
         h_layout.addLayout(right_section)
 
-        # Set stretch factors to achieve 2/5, 2/5, 1/5 width distribution
+        # Set stretch factors
         h_layout.setStretch(0, 2)  # left section 2/5
         h_layout.setStretch(1, 2)  # middle section 2/5
         h_layout.setStretch(2, 1)  # right section 1/5
@@ -207,29 +216,60 @@ class GameStatsApp(QMainWindow):
         if not self.aggregate_data.empty and len(self.match_selector) > 0:
             self.update_analytics_view()
 
+
     def update_analytics_view(self):
         """Update the analytics tab based on the selected match UUID."""
+        # Reload the aggregate data to ensure we have the latest updates
+        self.aggregate_data = self.load_aggregate_data()
+
         if self.aggregate_data.empty:
             self.statusBar().showMessage("No aggregate data available.", 5000)
             self.clear_analytics_tables()
             return
+
+        # Remember currently selected UUID
+        currently_selected_uuid = self.match_selector.currentText()
+
+        # Clear and repopulate the match selector with updated UUIDs
+        self.match_selector.blockSignals(True)  # Temporarily block signals to avoid triggering update_analytics_view() again
+        self.match_selector.clear()
+        all_matches = self.aggregate_data["uuid"].unique()
+        for m in all_matches:
+            self.match_selector.addItem(m)
+        self.match_selector.blockSignals(False)
+
+        # Attempt to restore previously selected UUID if it exists
+        if currently_selected_uuid in all_matches:
+            idx = self.match_selector.findText(currently_selected_uuid)
+            if idx >= 0:
+                self.match_selector.setCurrentIndex(idx)
+        else:
+            # If the previously selected UUID no longer exists, just pick the first one
+            if len(all_matches) > 0:
+                self.match_selector.setCurrentIndex(0)
 
         selected_uuid = self.match_selector.currentText()
         if not selected_uuid:
             self.clear_analytics_tables()
             return
 
-        # Filter for the selected match
+        # Filter for the selected match using the updated aggregate data
         match_df = self.aggregate_data[self.aggregate_data["uuid"] == selected_uuid]
 
         if match_df.empty:
             self.statusBar().showMessage("No data for this match.", 5000)
             self.clear_analytics_tables()
             return
+        
+        if 'uuid' not in self.aggregate_data.columns:
+            self.statusBar().showMessage("No 'uuid' column found in data. Check aggregate_player_data.csv.", 5000)
+            self.clear_analytics_tables()
+            return
 
-        # Define numeric columns
+        # The rest of your code remains the same for processing match_df...
+        # (numeric columns, summarizing stats, updating tables, chart, etc.)
         numeric_cols = ["score", "kills", "damage", "goldSpent"]
-        match_df = match_df.copy()  # Ensure we're working on a copy
+        match_df = match_df.copy()  # Ensure working on a copy
         for col in numeric_cols:
             match_df[col] = pd.to_numeric(match_df[col], errors='coerce').fillna(0)
 

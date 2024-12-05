@@ -9,9 +9,17 @@ import cv2
 import numpy as np
 import csv
 from datetime import datetime
+import sys
 
-# Set Tesseract executable path
-pytesseract.pytesseract.tesseract_cmd = os.path.join(os.getcwd(), "tesseract", "tesseract.exe")
+
+# Determine the base path depending on whether the code is "frozen" by PyInstaller or not
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS
+else:
+    base_path = os.path.dirname(__file__)
+
+# Set the Tesseract executable path relative to base_path
+pytesseract.pytesseract.tesseract_cmd = os.path.join(base_path, "tesseract", "tesseract.exe")
 
 def generate_uuid():
     return str(uuid.uuid4())
