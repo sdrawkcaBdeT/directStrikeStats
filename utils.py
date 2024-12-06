@@ -1,31 +1,44 @@
+import sys
 import os
+import pytesseract
+import csv
 import json
 import uuid
 import shutil
 import pandas as pd
 from PIL import Image
-import pytesseract
 import cv2
 import numpy as np
-import csv
 from datetime import datetime
-import sys
 
-
-# Determine the base path depending on whether the code is "frozen" by PyInstaller or not
+# Determine paths correctly
 if getattr(sys, 'frozen', False):
-    base_path = sys._MEIPASS
+    # Running as a bundled executable
+    external_base_path = os.path.dirname(sys.executable)  # For external files like config.json, templates
+    internal_base_path = sys._MEIPASS  # For bundled internal files like tesseract
 else:
-    base_path = os.path.dirname(__file__)
+    # Running in a normal Python environment
+    external_base_path = os.path.dirname(os.path.abspath(__file__))
+    internal_base_path = external_base_path
 
-# Set the Tesseract executable path relative to base_path
-pytesseract.pytesseract.tesseract_cmd = os.path.join(base_path, "tesseract", "tesseract.exe")
+# Set Tesseract executable path relative to internal_base_path
+tesseract_path = os.path.join(internal_base_path, "tesseract", "tesseract.exe")
+if not os.path.exists(tesseract_path):
+    raise FileNotFoundError(f"Tesseract executable not found at {tesseract_path}")
+pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
+# Define DATA_FOLDER relative to external_base_path
+DATA_FOLDER = os.path.join(external_base_path, "data")
+LAST_SESSION_FOLDER = os.path.join(DATA_FOLDER, "last_session")
 
 def generate_uuid():
     return str(uuid.uuid4())
 
 def load_config(config_file="config.json"):
-    with open(config_file, "r") as f:
+    config_path = os.path.join(external_base_path, config_file)
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file not found at {config_path}")
+    with open(config_path, "r") as f:
         return json.load(f)
 
 def clear_session_folder(folder_path):
@@ -44,9 +57,10 @@ def crop_area(image, start_x, end_x, top_y, bottom_y):
     ))
 
 def detect_top_left_corner(screenshot, template_path="team1_template.png", threshold=0.8):
-    template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+    template_full_path = os.path.join(external_base_path, template_path)
+    template = cv2.imread(template_full_path, cv2.IMREAD_COLOR)
     if template is None:
-        raise FileNotFoundError(f"Template file not found: {template_path}")
+        raise FileNotFoundError(f"Template file not found: {template_full_path}")
 
     screenshot_cv = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
     result = cv2.matchTemplate(screenshot_cv, template, cv2.TM_CCOEFF_NORMED)
@@ -80,7 +94,11 @@ def process_middle_control(image, middle_control, output_folder, uuid_str):
             coords["top_left_y"],
             coords["bottom_right_y"]
         )
-        save_cropped_image(cropped_team_area, output_folder, f"Middle_Control_{team.replace(' ', '_')}.png")
+        save_cropped_image(
+            cropped_team_area, 
+            output_folder, 
+            f"Middle_Control_{team.replace(' ', '_')}.png"
+        )
         extracted_time = extract_text_from_image(cropped_team_area).strip()
         if ":" not in extracted_time:
             extracted_time = "00:00"
@@ -128,6 +146,7 @@ def save_to_csv(data, output_file, uuid_str):
     print(f"Data saved to {output_file}")
 
 def detect_victory_or_defeat(image, victory_position):
+    # victory_position is a dict with "start_x", "start_y", "end_x", "end_y"
     cropped_victory_area = image.crop((
         int(victory_position["start_x"]),
         int(victory_position["start_y"]),
@@ -135,13 +154,7 @@ def detect_victory_or_defeat(image, victory_position):
         int(victory_position["end_y"])
     ))
 
-    # Use LAST_SESSION_FOLDER instead of "session_data"
-    # Import LAST_SESSION_FOLDER at the top of utils.py or pass it as a parameter
-    # For simplicity, just hardcode it if needed:
-    LAST_SESSION_FOLDER = os.path.join("data", "last_session")
-    os.makedirs(LAST_SESSION_FOLDER, exist_ok=True)
-
-    victory_defeat_path = os.path.join(LAST_SESSION_FOLDER, "victory_defeat_area.png")
+    victory_defeat_path = os.path.join(external_base_path, "victory_defeat_area.png")
     cropped_victory_area.save(victory_defeat_path)
 
     result_text = extract_text_from_image(cropped_victory_area).strip().lower()
