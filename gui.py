@@ -10,28 +10,47 @@ from PyQt6.QtWidgets import (
     QComboBox, QHBoxLayout
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter
+from PyQt6.QtGui import QPainter, QIcon
 from PyQt6.QtCharts import QChart, QChartView, QBarSeries, QBarSet, QBarCategoryAxis, QValueAxis
 
 from main import process_screenshot
 from utils import load_config
 
-CONFIG_FILE = "config.json"
-# Get the directory of the current file (gui.py)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Construct an absolute path to the data folder
-DATA_FOLDER = os.path.join(BASE_DIR, "data")
+from pathlib import Path
+
+# Determine base_path correctly
+if getattr(sys, 'frozen', False):
+    # Running as a bundled executable
+    base_path = os.path.dirname(sys.executable)
+else:
+    # Running in a normal Python environment
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+# Define paths relative to base_path
+CONFIG_FILE = os.path.join(base_path, "config.json")
+TEAM1_TEMPLATE_NIGHTELF = os.path.join(base_path, "team1_template_nightelf.png")
+TEAM1_TEMPLATE_UNDEAD = os.path.join(base_path, "team1_template_undead.png")
+# Add other templates as needed, e.g., team1_template_human.png, team1_template_orc.png
+
+ICON_PATH = os.path.join(base_path, "icon.ico")
+
+# Define DATA_FOLDER relative to base_path
+DATA_FOLDER = os.path.join(base_path, "data")
 LAST_SESSION_FOLDER = os.path.join(DATA_FOLDER, "last_session")
+
 
 class GameStatsApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Game Stats Tracker")
+        self.setWindowTitle("DirectStrike Stats")
         self.setGeometry(100, 100, 1200, 800)
 
         # Load configuration
         self.config = load_config(CONFIG_FILE)
         self.player_name = self.config.get("player_name", "Default Player")
+        
+        # Set the window icon
+        self.setWindowIcon(QIcon(ICON_PATH))
 
         # Ensure the data folder exists
         if not os.path.exists(DATA_FOLDER):
@@ -65,14 +84,17 @@ class GameStatsApp(QMainWindow):
     def load_aggregate_data(self):
         # Load aggregate player data if it exists
         player_data_path = os.path.join(DATA_FOLDER, "aggregate_player_data.csv")
+        print(f"Loading aggregate data from: {player_data_path}")
         if os.path.exists(player_data_path):
             try:
                 df = pd.read_csv(player_data_path)
+                print(f"Aggregate data loaded successfully. Rows: {len(df)}")
                 return df
             except Exception as e:
                 print(f"Error loading aggregate data: {e}")
                 return pd.DataFrame()
         else:
+            print("No aggregate_player_data.csv found.")
             return pd.DataFrame()
 
     def setup_game_stats_tab(self):
@@ -127,11 +149,11 @@ class GameStatsApp(QMainWindow):
         self.file_management_tab = QWidget()
         layout = QVBoxLayout()
 
-        open_aggregate_player_data_button = QPushButton("Open Data Folder")
-        open_aggregate_player_data_button.clicked.connect(
+        open_data_folder_button = QPushButton("Open Data Folder")
+        open_data_folder_button.clicked.connect(
             lambda: self.open_folder(DATA_FOLDER)
         )
-        layout.addWidget(open_aggregate_player_data_button)
+        layout.addWidget(open_data_folder_button)
 
         open_aggregate_middle_control_button = QPushButton("Open Aggregate Middle Control")
         open_aggregate_middle_control_button.clicked.connect(
