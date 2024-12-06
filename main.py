@@ -1,5 +1,5 @@
 import os
-import json
+import sys
 import csv
 import uuid
 import shutil
@@ -17,7 +17,16 @@ from utils import (
     extract_text_from_image, save_cropped_image, crop_area
 )
 
-DATA_FOLDER = "data/"
+# Determine base_path correctly
+if getattr(sys, 'frozen', False):
+    # Running as a bundled executable
+    base_path = os.path.dirname(sys.executable)
+else:
+    # Running in a normal Python environment
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+# Define DATA_FOLDER relative to base_path
+DATA_FOLDER = os.path.join(base_path, "data")
 LAST_SESSION_FOLDER = os.path.join(DATA_FOLDER, "last_session")
 
 # Make sure data folders exist
@@ -25,16 +34,12 @@ if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
 
 def process_screenshot(player_name):
-    # Generate UUID for the session
     session_uuid = generate_uuid()
 
-    # Prepare session directory
     clear_session_folder(LAST_SESSION_FOLDER)
 
-    # Load the config
     config = load_config()
 
-    # Take a full screenshot
     screenshot_path = os.path.join(LAST_SESSION_FOLDER, "screenshot.png")
     pyautogui.screenshot(screenshot_path)
     print(f"Screenshot saved: {screenshot_path}")
@@ -45,30 +50,45 @@ def process_screenshot(player_name):
     # Convert the screenshot to OpenCV format
     screenshot_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
-    # Load the team1 template for top-left corner detection
-    template_path = "team1_template.png"
-    template = cv2.imread(template_path, cv2.IMREAD_COLOR)
-    if template is None:
-        print(f"Template file not found: {template_path}")
-        return
+    # List of template image filenames to try (you can add more as needed)
+    template_filenames = [
+        "team1_template_undead.png",
+        "team1_template_nightelf.png",
+        # "team1_template_human.png",
+        # "team1_template_orc.png"
+    ]
 
-    # Perform template matching
-    result = cv2.matchTemplate(screenshot_cv, template, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-
-    # Threshold to ensure a match was found
     threshold = 0.8  # Adjust as needed
-    if max_val < threshold:
-        print("Top-left corner not detected. Ensure the template matches the screenshot.")
+    best_match_val = 0
+    best_match_loc = None
+
+    # Attempt to find the top-left corner using multiple templates
+    for template_name in template_filenames:
+        template_path = os.path.join(base_path, template_name)
+        template = cv2.imread(template_path, cv2.IMREAD_COLOR)
+        if template is None:
+            print(f"Template file not found: {template_path}")
+            continue
+
+        # Perform template matching
+        result = cv2.matchTemplate(screenshot_cv, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+        print(f"Template '{template_name}' match value: {max_val}")
+        if max_val > threshold and max_val > best_match_val:
+            best_match_val = max_val
+            best_match_loc = max_loc
+
+    # Check if we found a suitable match
+    if best_match_loc is None:
+        print("Top-left corner not detected with any template. Ensure the templates match the screenshot.")
         return
 
     # Top-left corner of the matched region
-    top_left = max_loc
-    print(f"Top-left corner detected at: {top_left}")
+    top_left = best_match_loc
+    print(f"Top-left corner detected at: {top_left} with a score of {best_match_val}")
 
     # Crop the region starting from the detected top-left corner
-    # These ratios were used previously and found to work correctly.
-    # Adjust if necessary for your resolution.
     cropped_image = screenshot_cv[
         top_left[1]:top_left[1] + int(915 / 1440 * screenshot_cv.shape[0]),  # Height
         top_left[0]:top_left[0] + int(1665 / 2560 * screenshot_cv.shape[1])  # Width
@@ -115,7 +135,6 @@ def process_screenshot(player_name):
             extracted_text = extract_text_from_image(cropped_cell, is_numeric=is_numeric)
             row_data.append(extracted_text)
 
-        # Temporarily store the game_outcome. We will adjust after identifying the user's team.
         row_data.append(team)
         row_data.append(game_outcome) 
         row_data.append(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
